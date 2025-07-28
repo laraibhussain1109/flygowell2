@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Search Results</h2>
+{% if packages %}
+<div class="row">
+    {% for p in packages %}
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <img src="{{ p.image.url }}" class="card-img-top" alt="{{ p.title }}">
+            <div class="card-body">
+                <h5 class="card-title">{{ p.title }}</h5>
+                <p><strong>Destination:</strong> {{ p.destination }}</p>
+                <p><strong>Price:</strong> ₹{{ p.price }}</p>
+                <a href="{% url 'add_to_cart' p.id %}" class="btn btn-outline-primary mt-2">
+                    Add to My Packages
+                </a>
+
+                <form action="{% url 'add_to_cart' p.id %}" method="POST">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-primary">Add to My Packages</button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p>No packages found.</p>
+{% endif %}
+{% endblock %}

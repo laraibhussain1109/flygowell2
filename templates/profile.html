@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="container mt-5 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 bg-white p-4 rounded shadow">
+
+      {# ——— PROFILE SECTION ——— #}
+      <div class="d-flex justify-content-between mb-3">
+        <h3>Your Profile</h3>
+        <button id="toggle-profile-edit" class="btn btn-sm btn-outline-primary">
+          <i class="fa fa-pencil"></i> Edit
+        </button>
+      </div>
+
+      <div id="profile-read">
+        <dl class="row mb-4">
+          <dt class="col-sm-4">Full Name</dt>
+          <dd class="col-sm-8">{{ profile.full_name }}</dd>
+          <dt class="col-sm-4">Phone</dt>
+          <dd class="col-sm-8">{{ profile.phone }}</dd>
+        </dl>
+      </div>
+
+      <form id="profile-form" method="post" style="display: none;" class="mb-4">
+        {% csrf_token %}
+        <input type="hidden" name="save_profile" value="1">
+        {% for field in form %}
+        <div class="mb-3">
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.field.required %}
+          <small class="text-danger">* (mandatory)</small>
+          {% endif %}
+          {% for err in field.errors %}
+          <div class="text-danger small">{{ err }}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-success">Save Profile</button>
+        <button type="button" id="cancel-profile-edit" class="btn btn-secondary">Cancel</button>
+      </form>
+
+      <hr>
+
+      {# ——— TRAVELLERS SECTION ——— #}
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4>Travellers</h4>
+        <button id="btn-show-passengers" class="btn btn-outline-info btn-sm">
+          <i class="fa fa-plus"></i> Add Travellers
+        </button>
+      </div>
+
+      {% if user.passengers.all %}
+      <div class="mb-3">
+        {% for p in user.passengers.all %}
+        <div class="card mb-2" id="passenger-card-{{ p.id }}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 class="mb-1">{{ p.full_name }}</h6>
+                <small class="text-muted">{{ p.get_gender_display }}, {{ p.date_of_birth }} | Age: {{
+                  p.age|default:"N/A" }} | {{ p.nationality }}</small>
+                {% if p.passport_number %}
+                <br><small class="text-muted">Passport: {{ p.passport_number }}</small>
+                {% endif %}
+              </div>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary btn-sm edit-passenger" data-id="{{ p.id }}">
+                  <i class="fa fa-pencil"></i> Edit
+                </button>
+                <button class="btn btn-outline-danger btn-sm delete-passenger" data-id="{{ p.id }}">
+                  <i class="fa fa-trash"></i> Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted mb-3">No travellers added yet.</p>
+      {% endif %}
+
+      <form id="passenger-formset" method="post" style="display: none;">
+        {% csrf_token %}
+        <input type="hidden" name="save_passengers" value="1">
+        {{ formset.management_form }}
+
+        <div id="passenger-forms">
+          {% for f in formset %}
+          <div class="card mb-3 p-3 traveller-form" data-form-index="{{ forloop.counter0 }}">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5>Traveller {{ forloop.counter }}</h5>
+              {% if f.instance.pk %}
+              <button type="button" class="btn btn-outline-danger btn-sm remove-form">
+                <i class="fa fa-times"></i> Remove
+              </button>
+              {% endif %}
+            </div>
+            {{ f.id }}
+            {% for field in f.visible_fields %}
+            <div class="mb-2">
+              {{ field.label_tag }}
+              {{ field }}
+              {% if field.field.required %}
+              <small class="text-danger">* (mandatory)</small>
+              {% endif %}
+              {% for err in field.errors %}
+              <div class="text-danger small">{{ err }}</div>
+              {% endfor %}
+            </div>
+            {% endfor %}
+            {% if f.DELETE %}
+            <div class="form-check" style="display: none;">
+              {{ f.DELETE }}
+              <label class="form-check-label" for="{{ f.DELETE.id_for_label }}">
+                Delete this traveller
+              </label>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="mb-3">
+          <button id="btn-add-more" type="button" class="btn btn-outline-secondary btn-sm me-2">+ Add Another
+            Traveller</button>
+          <button type="submit" class="btn btn-success me-2">Save Travellers</button>
+          <button id="btn-cancel-passengers" type="button" class="btn btn-secondary">Cancel</button>
+        </div>
+      </form>
+
+
+
+      <hr>
+      <div id="my-packages"> {# ← Add this wrapper div with ID #}
+        <h4>My Packages</h4>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h4>My Packages</h4>
+          <a href="{% url 'destination' %}" class="btn btn-outline-success btn-sm">
+            <i class="fa fa-plus"></i> Add Packages
+          </a>
+        </div>  
+        {% if cart_items %}
+        <div class="row">
+          {% for item in cart_items %}
+          <div class="col-md-6">
+            <div class="card mb-3">
+              <img src="{{ item.package.image.url }}" class="card-img-top" alt="{{ item.package.title }}">
+              <div class="card-body">
+                <h5 class="card-title">{{ item.package.title }}</h5>
+                <p><strong>Destination:</strong> {{ item.package.destination }}</p>
+                <p><strong>Price:</strong> ₹{{ item.package.price }}</p>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No packages added yet.</p>
+        {% endif %}
+      </div>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Profile edit toggle
+    const readDiv = document.getElementById('profile-read');
+    const formDiv = document.getElementById('profile-form');
+    document.getElementById('toggle-profile-edit').onclick = () => {
+      readDiv.style.display = 'none';
+      formDiv.style.display = 'block';
+    };
+    document.getElementById('cancel-profile-edit').onclick = () => {
+      formDiv.style.display = 'none';
+      readDiv.style.display = 'block';
+    };
+
+    // Travellers formset logic
+    const showBtn = document.getElementById('btn-show-passengers');
+    const cancelBtn = document.getElementById('btn-cancel-passengers');
+    const addMore = document.getElementById('btn-add-more');
+    const formset = document.getElementById('passenger-formset');
+    const formsContainer = document.getElementById('passenger-forms');
+    const totalForms = document.getElementById('id_p-TOTAL_FORMS');
+
+    // Show traveller formset
+    showBtn.onclick = () => {
+      formset.style.display = 'block';
+      showBtn.style.display = 'none';
+    };
+
+    // Hide formset on cancel
+    cancelBtn.onclick = () => {
+      formset.style.display = 'none';
+      showBtn.style.display = 'inline-block';
+    };
+
+    // Edit passenger functionality
+    document.querySelectorAll('.edit-passenger').forEach(btn => {
+      btn.onclick = () => {
+        const passengerId = btn.dataset.id;
+        // Show the formset and scroll to the specific form
+        formset.style.display = 'block';
+        showBtn.style.display = 'none';
+
+        // Find and highlight the form for this passenger
+        const forms = formsContainer.querySelectorAll('.traveller-form');
+        forms.forEach(form => {
+          const idField = form.querySelector('input[name*="-id"]');
+          if (idField && idField.value === passengerId) {
+            form.style.border = '2px solid #007bff';
+            form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+              form.style.border = '';
+            }, 3000);
+          }
+        });
+      };
+    });
+
+    // Delete passenger functionality
+    document.querySelectorAll('.delete-passenger').forEach(btn => {
+      btn.onclick = () => {
+        const passengerId = btn.dataset.id;
+        if (confirm('Are you sure you want to delete this traveller?')) {
+          // Show the formset
+          formset.style.display = 'block';
+          showBtn.style.display = 'none';
+
+          // Find the form for this passenger and mark for deletion
+          const forms = formsContainer.querySelectorAll('.traveller-form');
+          forms.forEach(form => {
+            const idField = form.querySelector('input[name*="-id"]');
+            if (idField && idField.value === passengerId) {
+              const deleteField = form.querySelector('input[name*="-DELETE"]');
+              if (deleteField) {
+                deleteField.checked = true;
+                form.style.opacity = '0.5';
+                form.style.backgroundColor = '#f8d7da';
+
+                // Add a notice
+                const notice = document.createElement('div');
+                notice.className = 'alert alert-warning mt-2';
+                notice.innerHTML = '<strong>This traveller will be deleted when you save.</strong>';
+                form.appendChild(notice);
+              }
+            }
+          });
+        }
+      };
+    });
+
+    // Remove form functionality (for forms in edit mode)
+    document.addEventListener('click', (e) => {
+      if (e.target.classList.contains('remove-form') || e.target.parentElement.classList.contains('remove-form')) {
+        const btn = e.target.classList.contains('remove-form') ? e.target : e.target.parentElement;
+        const form = btn.closest('.traveller-form');
+        const deleteField = form.querySelector('input[name*="-DELETE"]');
+
+        if (confirm('Are you sure you want to remove this traveller?')) {
+          if (deleteField) {
+            deleteField.checked = true;
+            form.style.opacity = '0.5';
+            form.style.backgroundColor = '#f8d7da';
+            btn.style.display = 'none';
+
+            // Add a notice
+            const notice = document.createElement('div');
+            notice.className = 'alert alert-warning mt-2';
+            notice.innerHTML = '<strong>This traveller will be deleted when you save.</strong>';
+            form.appendChild(notice);
+          } else {
+            // If it's a new form (no delete field), just remove it from DOM
+            form.remove();
+            // Update total forms count
+            const currentCount = parseInt(totalForms.value);
+            totalForms.value = currentCount - 1;
+          }
+        }
+      }
+    });
+
+    // Add another traveller - Fixed implementation
+    addMore.onclick = () => {
+      const currentCount = parseInt(totalForms.value);
+
+      // Create new form HTML based on empty form
+      const emptyFormHtml = `
+        <div class="card mb-3 p-3 traveller-form" data-form-index="${currentCount}">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5>Traveller ${currentCount + 1}</h5>
+            <button type="button" class="btn btn-outline-danger btn-sm remove-form">
+              <i class="fa fa-times"></i> Remove
+            </button>
+          </div>
+          <input type="hidden" name="p-${currentCount}-id" id="id_p-${currentCount}-id">
+          
+          <div class="mb-2">
+            <label for="id_p-${currentCount}-full_name">Full name:</label>
+            <input type="text" name="p-${currentCount}-full_name" maxlength="200" required id="id_p-${currentCount}-full_name" class="form-control">
+            <small class="text-danger">* (mandatory)</small>
+          </div>
+          
+          <div class="mb-2">
+            <label for="id_p-${currentCount}-date_of_birth">Date of birth:</label>
+            <input type="date" name="p-${currentCount}-date_of_birth" required id="id_p-${currentCount}-date_of_birth" class="form-control">
+            <small class="text-danger">* (mandatory)</small>
+          </div>
+          
+          <div class="mb-2">
+            <label for="id_p-${currentCount}-gender">Gender:</label>
+            <select name="p-${currentCount}-gender" required id="id_p-${currentCount}-gender" class="form-control">
+              <option value="">---------</option>
+              <option value="M">Male</option>
+              <option value="F">Female</option>
+              <option value="O">Other</option>
+            </select>
+            <small class="text-danger">* (mandatory)</small>
+          </div>
+          
+          <div class="mb-2">
+            <label for="id_p-${currentCount}-age">Age:</label>
+            <input type="number" name="p-${currentCount}-age" id="id_p-${currentCount}-age" class="form-control">
+          </div>
+          
+          <div class="mb-2">
+            <label for="id_p-${currentCount}-nationality">Nationality:</label>
+            <input type="text" name="p-${currentCount}-nationality" maxlength="100" required id="id_p-${currentCount}-nationality" class="form-control">
+            <small class="text-danger">* (mandatory)</small>
+          </div>
+          
+          <div class="mb-2">
+            <label for="id_p-${currentCount}-passport_number">Passport number:</label>
+            <input type="text" name="p-${currentCount}-passport_number" maxlength="30" id="id_p-${currentCount}-passport_number" class="form-control">
+          </div>
+          
+          <div class="mb-2">
+            <label for="id_p-${currentCount}-passport_issue">Passport issue:</label>
+            <input type="date" name="p-${currentCount}-passport_issue" id="id_p-${currentCount}-passport_issue" class="form-control">
+          </div>
+          
+          <div class="mb-2">
+            <label for="id_p-${currentCount}-passport_expiry">Passport expiry:</label>
+            <input type="date" name="p-${currentCount}-passport_expiry" id="id_p-${currentCount}-passport_expiry" class="form-control">
+          </div>
+          
+          <div class="mb-2">
+            <label for="id_p-${currentCount}-aadhar_number">Aadhar number:</label>
+            <input type="text" name="p-${currentCount}-aadhar_number" maxlength="20" id="id_p-${currentCount}-aadhar_number" class="form-control">
+          </div>
+          
+          <div class="form-check" style="display: none;">
+            <input type="checkbox" name="p-${currentCount}-DELETE" id="id_p-${currentCount}-DELETE" class="form-check-input">
+            <label class="form-check-label" for="id_p-${currentCount}-DELETE">
+              Delete this traveller
+            </label>
+          </div>
+        </div>
+      `;
+
+      formsContainer.insertAdjacentHTML('beforeend', emptyFormHtml);
+      totalForms.value = currentCount + 1;
+    };
+
+  });
+
+  <style>
+    html {
+      scroll - behavior: smooth;
+  }
+  </style>
+
+
+</script>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up{% endblock %}
+{% block content %}
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endif %}
+
+
+<div class="container mb-5" style="margin-top: 6rem;">
+    <div class="row justify-content-center">
+        <div class="col-md-6 bg-light p-4 rounded">
+            <h2 class="text-center mb-4">Create an Account</h2>
+
+
+            <form method="POST" action="" class="w-100" style="max-width: 500px;">
+        {% csrf_token %}
+
+        {% if not email_verified %}
+        <div class="mb-3">
+            <label for="email" class="form-label">Enter your email to verify</label>
+            <input type="email" class="form-control" name="email" required>
+            <button type="submit" name="action" value="send_otp" class="btn btn-secondary mt-2">Send OTP</button>
+        </div>
+        {% elif not otp_verified %}
+        <div class="mb-3">
+            <label for="otp" class="form-label">Enter the OTP sent to your email</label>
+            <input type="text" class="form-control" name="otp" maxlength="6" required>
+            <button type="submit" name="action" value="verify_otp" class="btn btn-secondary mt-2">Verify OTP</button>
+        </div>
+
+        <!-- Show the email where OTP was sent -->
+        <p class="text-muted">An OTP was sent to {{ verified_email }}</p>
+
+        {% else %}
+        <!-- Email & OTP verified: Show full signup form -->
+        <input type="hidden" name="email" value="{{ verified_email }}">
+
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <div class="input-group">
+                <span class="input-group-text">@</span>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" id="phone" name="phone" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="password_confirm" class="form-label">Confirm Password</label>
+            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+        </div>
+
+        <div class="d-grid">
+            <button type="submit" name="action" value="submit_signup" class="btn btn-primary">Sign Up</button>
+        </div>
+        {% endif %}
+    </form>
+            <p class="text-center mt-3">Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
